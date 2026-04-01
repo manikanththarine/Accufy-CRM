@@ -112,24 +112,24 @@ export default function MainLayout() {
         setShowUserMenu(false);
       }
 
-      if (button) {
-        // If it's a navigation button or has an explicit onClick, we might still want to show a toast if it's a generic action
-        // For this demo, we'll show a toast for buttons that don't have specific classes or are clearly action buttons
-        const text = button.textContent?.trim();
-        const isSidebarToggle = button.querySelector('.lucide-chevron-left');
-        const isNavButton = button.closest('nav') || button.closest('aside');
-        const isUserSwitcher = button.closest('.user-menu-container');
+      // if (button) {
+      //   // If it's a navigation button or has an explicit onClick, we might still want to show a toast if it's a generic action
+      //   // For this demo, we'll show a toast for buttons that don't have specific classes or are clearly action buttons
+      //   const text = button.textContent?.trim();
+      //   const isSidebarToggle = button.querySelector('.lucide-chevron-left');
+      //   const isNavButton = button.closest('nav') || button.closest('aside');
+      //   const isUserSwitcher = button.closest('.user-menu-container');
         
-        if (!isSidebarToggle && !isNavButton && !isUserSwitcher && text) {
-          toast.success(`Action triggered: ${text}`, {
-            description: 'This feature is fully integrated into the ERP workflow.',
-          });
-        } else if (!isSidebarToggle && !isNavButton && !isUserSwitcher && !text) {
-           toast.success(`Action triggered`, {
-            description: 'This feature is fully integrated into the ERP workflow.',
-          });
-        }
-      }
+      //   if (!isSidebarToggle && !isNavButton && !isUserSwitcher && text) {
+      //     toast.success(`Action triggered: ${text}`, {
+      //       description: 'This feature is fully integrated into the ERP workflow.',
+      //     });
+      //   } else if (!isSidebarToggle && !isNavButton && !isUserSwitcher && !text) {
+      //      toast.success(`Action triggered`, {
+      //       description: 'This feature is fully integrated into the ERP workflow.',
+      //     });
+      //   }
+      // }
     };
 
     document.addEventListener('click', handleGlobalClick);
