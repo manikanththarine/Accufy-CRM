@@ -1,8 +1,8 @@
-import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Plus, ChevronDown, ListFilter, Settings2, Building2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const accounts = [
   { id: 1, name: 'Phenom', icon: 'P', industry: 'Human Resources', lastInteraction: '4d ago', revenue: '$100M to $500M', headcount: '1001-5000', lastFunding: 'Undisclosed', linkedin: 'phenom', website: 'phenom.com', owner: 'Avinash Nadh' },
@@ -15,6 +15,24 @@ const accounts = [
 ];
 
 export default function Accounts() {
+const [apiAccounts, setApiAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:1000/api/dashboard-stats')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data)
+
+        // 2. Set the response data to state
+        setApiAccounts(data.leads);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching accounts:', error);
+        setLoading(false);
+      });
+  }, []);
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -58,60 +76,93 @@ export default function Accounts() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto border border-slate-200 rounded-md bg-white">
-        <Table>
-          <TableHeader className="bg-slate-50 sticky top-0 z-10">
-            <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Account</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Industry</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Last interaction</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Revenue</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Headcount</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Last funding</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">@ LinkedIn</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Website</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Owner</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {accounts.map((account) => (
-              <TableRow key={account.id} className="border-slate-200 hover:bg-slate-100 cursor-pointer">
-                <TableCell className="py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-700 border border-slate-300">
-                      {account.icon}
-                    </div>
-                    <span className="font-medium text-sm text-slate-800">{account.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-2">
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-normal text-xs border-slate-300">
-                    {account.industry}
-                  </Badge>
-                </TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.lastInteraction}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.revenue}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.headcount}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.lastFunding}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.linkedin}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{account.website}</TableCell>
-                <TableCell className="py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-[10px]">
-                      AN
-                    </div>
-                    <span className="text-sm text-slate-700">{account.owner}</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+     <Table>
+  <TableHeader className="bg-slate-50 sticky top-0 z-10">
+    <TableRow className="border-slate-200 hover:bg-transparent">
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Account / Company</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Status</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Priority</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Score</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Intent</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Email</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Source</TableHead>
+      <TableHead className="text-xs font-medium text-slate-400 h-9">Lead Name</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {apiAccounts.map((account: any) => (
+      <TableRow key={account.id} className="border-slate-200 hover:bg-slate-100 cursor-pointer">
+        {/* Company Name */}
+        <TableCell className="py-2">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm text-slate-800">
+              {account.company || "Unknown Company"}
+            </span>
+          </div>
+        </TableCell>
+
+        {/* Status Badge */}
+        <TableCell className="py-2">
+          <Badge 
+            variant="secondary" 
+            className={`font-normal text-xs border-slate-300 ${
+              account.status === 'Hot' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'
+            }`}
+          >
+            {account.status}
+          </Badge>
+        </TableCell>
+
+        {/* Priority Badge */}
+        <TableCell className="py-2">
+          <span className={`text-xs font-medium uppercase ${
+            account.priority === 'high' ? 'text-red-600' : 'text-slate-500'
+          }`}>
+            {account.priority}
+          </span>
+        </TableCell>
+
+        {/* AI Score */}
+        <TableCell className="py-2 text-sm text-slate-500">
+          <span className={account.score > 70 ? "text-green-600 font-bold" : ""}>
+            {account.score}/100
+          </span>
+        </TableCell>
+
+        {/* Intent */}
+        <TableCell className="py-2 text-sm text-slate-500 italic">
+          "{account.intent}"
+        </TableCell>
+
+        {/* Email */}
+        <TableCell className="py-2 text-sm text-blue-600 underline">
+          {account.email}
+        </TableCell>
+
+        {/* Source */}
+        <TableCell className="py-2 text-sm text-slate-500">
+          {account.source}
+        </TableCell>
+
+        {/* Lead Name / Owner */}
+        <TableCell className="py-2">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-[10px]">
+              {account.name ? account.name.substring(0, 2).toUpperCase() : "NA"}
+            </div>
+            <span className="text-sm text-slate-700">{account.name}</span>
+          </div>
+        </TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
       </div>
       
       {/* Footer */}
-      <div className="py-3 text-xs text-slate-400">
+      {/* <div className="py-3 text-xs text-slate-400">
         {accounts.length} accounts
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -22,3 +22,7 @@
   }
 }
 
+/* Add this to your index.css or global styles */
+[data-rbd-draggable-context-id] {
+  transition-duration: 0.001s !important;
+}

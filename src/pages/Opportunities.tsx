@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Plus, ChevronDown, ListFilter, Settings2, CircleDashed, Circle, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+// --- NEW IMPORT ---
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+
 const stages = [
   { name: 'Lead', icon: <CircleDashed className="w-4 h-4 text-slate-400" /> },
   { name: 'Qualification', icon: <Circle className="w-4 h-4 text-slate-400" /> },
@@ -12,213 +15,279 @@ const stages = [
   { name: 'Lost', icon: <XCircle className="w-4 h-4 text-red-600" /> },
 ];
 
-const opportunities = [
-  { id: 1, title: 'Phenom - New Business', amount: '$10,000', stage: 'Lead', account: 'Phenom', accountIcon: 'P', owner: 'AN', lastInteraction: '11d ago', leadScore: 65, status: 'Warm', aiNextAction: 'Send follow-up email regarding pricing' },
-  { id: 2, title: 'HCA Healthcare - Expansion', amount: '$25,000', stage: 'Qualification', account: 'HCA Healthcare', accountIcon: 'H', owner: 'AN', lastInteraction: '6d ago', leadScore: 92, status: 'Hot', aiNextAction: 'Schedule technical deep-dive call' },
-  { id: 3, title: 'Kollx - Renewal', amount: '$5,000', stage: 'Demo', account: 'Kollx', accountIcon: 'K', owner: 'AN', lastInteraction: '2d ago', leadScore: 88, status: 'Hot', aiNextAction: 'Prepare custom demo environment' },
-];
-
 export default function Opportunities() {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState({
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [apiAccounts, setApiAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
     name: '',
     company: '',
     jobTitle: '',
     email: '',
-    source: '',
+    source: 'Manual',
     description: ''
   });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("New Opportunity Data:", formData);
-    
-    // Add logic here to save data to your backend
-    setIsModalOpen(false);
+  useEffect(() => {
+    fetch('http://127.0.0.1:1000/api/dashboard-stats')
+      .then(response => response.json())
+      .then(data => {
+        setApiAccounts(data.leads || []);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching accounts:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  // --- NEW DRAG END FUNCTION ---
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    // If dropped outside a list or in the same spot, do nothing
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
+      return;
+    }
+
+    const newStage = destination.droppableId;
+    const leadId = draggableId;
+
+    // 1. Optimistic UI Update (Change local state immediately)
+    const updatedAccounts = apiAccounts.map(lead => {
+      if (lead.id.toString() === leadId) {
+        return { ...lead, stage: newStage };
+      }
+      return lead;
+    });
+    setApiAccounts(updatedAccounts);
+
+    // 2. Update Backend
+    try {
+      await fetch(`http://127.0.0.1:1000/api/update-lead-stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: leadId,
+          stage: newStage
+        })
+      });
+    } catch (error) {
+      console.error("Failed to update backend:", error);
+      // Optional: Rollback state if API fails
+    }
   };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('http://127.0.0.1:1000/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        setIsModalOpen(false);
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header & Filter Bar (Unchanged) */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-200">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold text-slate-900">Opportunities</h1>
           <div className="flex items-center gap-1 bg-slate-100 rounded-md p-0.5">
-            <button className="px-3 py-1 text-sm font-medium bg-slate-100 text-slate-900 rounded shadow-sm">
-              All
-            </button>
-            <button className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded">
-              <Plus className="w-4 h-4" />
-            </button>
+            <button className="px-3 py-1 text-sm font-medium bg-slate-100 text-slate-900 rounded shadow-sm">All</button>
+            <button className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"><Plus className="w-4 h-4" /></button>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-2 h-8 text-xs border-slate-200 bg-transparent hover:bg-slate-100">
-            Import / Export
-            <ChevronDown className="w-3 h-3" />
+            Import / Export <ChevronDown className="w-3 h-3" />
           </Button>
           <Button onClick={() => setIsModalOpen(true)} className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white gap-1" >
-            <Plus className="w-3 h-3" />
-            Create opportunity
+            <Plus className="w-3 h-3" /> Create opportunity
           </Button>
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="flex items-center justify-between py-3">
         <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-2 h-7 text-xs border-slate-200 bg-transparent hover:bg-slate-100 text-slate-500">
-            <ListFilter className="w-3 h-3" />
-            Filter
+            <ListFilter className="w-3 h-3" /> Filter
           </Button>
         </div>
         <Button variant="outline" className="gap-2 h-7 text-xs border-slate-200 bg-transparent hover:bg-slate-100 text-slate-500">
-          <Settings2 className="w-3 h-3" />
-          Display
+          <Settings2 className="w-3 h-3" /> Display
         </Button>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-3 h-full min-w-max pb-4">
-          {stages.map((stage) => {
-            const stageOpps = opportunities.filter((o) => o.stage === stage.name);
-            const totalAmount = stageOpps.reduce((sum, opp) => sum + parseInt(opp.amount.replace(/[^0-9]/g, '')), 0);
+      {/* --- WRAP BOARD IN DRAGDROPCONTEXT --- */}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-3 h-full min-w-max pb-4">
+            {stages.map((stage) => {
+              const stageOpps = apiAccounts.filter((o) => (o.stage || 'Lead') === stage.name);
+              const totalAmount = stageOpps.reduce((sum, opp) => sum + parseInt(opp?.amount?.replace(/[^0-9]/g, '') || '0'), 0);
 
-            return (
-              <div key={stage.name} className="w-[280px] flex flex-col h-full bg-white rounded-lg border border-slate-200">
-                {/* Column Header */}
-                <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-lg">
-                  <div className="flex items-center gap-2">
-                    {stage.icon}
-                    <h3 className="text-sm font-medium text-slate-700">{stage.name}</h3>
-                    <span className="text-xs text-slate-400">{stageOpps.length}</span>
+              return (
+                <div key={stage.name} className="w-[280px] flex flex-col h-full bg-white rounded-lg border border-slate-200">
+                  <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-lg">
+                    <div className="flex items-center gap-2">
+                      {stage.icon}
+                      <h3 className="text-sm font-medium text-slate-700">{stage.name}</h3>
+                      <span className="text-xs text-slate-400">{stageOpps.length}</span>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500">${totalAmount.toLocaleString()}</span>
                   </div>
-                  <span className="text-xs font-medium text-slate-500">
-                    ${totalAmount.toLocaleString()}
-                  </span>
+
+                  {/* --- DROPPABLE COLUMN CONTENT --- */}
+                  <Droppable droppableId={stage.name}>
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[150px]"
+                      >
+                        <button onClick={() => setIsModalOpen(true)} className="w-full py-1.5 flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors">
+                          <Plus className="w-3.5 h-3.5" /> Create opportunity
+                        </button>
+
+                        {stageOpps.map((opp, index) => (
+                          <Draggable key={opp.id.toString()} draggableId={opp.id.toString()} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={{ ...provided.draggableProps.style, transitionDuration: '0.001s' }}
+                              >
+                                <motion.div
+                                  layoutId={opp.id.toString()}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 550,
+                                    damping: 35,
+                                    mass: 0.8
+                                  }}
+                                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                                >
+                                  <div className="flex justify-between items-start mb-3">
+                                    <h4 className="font-semibold text-sm text-slate-900 leading-tight">{opp.displayTitle || opp.name}</h4>
+                                    <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${opp.score >= 60 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600'}`}>
+                                      {opp.score}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-xs font-bold text-blue-600 border border-slate-200">
+                                      {opp.displayIcon || (opp.company ? opp.company[0] : '?')}
+                                    </div>
+                                    <span className="text-xs font-medium text-slate-600">{opp.company}</span>
+                                  </div>
+
+                                  <div className="mb-4 p-2.5 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <Sparkles className="w-3 h-3 text-blue-600" />
+                                      <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">AI Next Action</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 line-clamp-2 italic">"{opp.ai_next_action || opp.next_action}"</p>
+                                  </div>
+
+                                  <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                                    <span className="text-sm font-bold text-slate-900">{opp.displayAmount || '$0'}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] font-medium text-slate-400">
+                                        {new Date(opp.updated_at).toLocaleDateString()}
+                                      </span>
+                                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
+                                        {opp?.name?.charAt(0) || opp?.company?.charAt(0) || '?'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-
-                {/* Column Content */}
-                <div className="p-2 flex-1 overflow-y-auto space-y-2">
-                  <button onClick={() => setIsModalOpen(true)} className="w-full py-1.5 flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors">
-                    <Plus className="w-3.5 h-3.5" />
-                    Create opportunity
-                  </button>
-
-                  {stageOpps.map((opp) => (
-                    <div key={opp.id} className="bg-white border border-slate-200 rounded-md p-3 cursor-pointer hover:border-slate-300 transition-colors shadow-sm">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-sm text-slate-800">{opp.title}</h4>
-                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${opp.leadScore >= 80 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : opp.leadScore >= 60 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                          Score: {opp.leadScore}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-4 h-4 rounded bg-slate-100 flex items-center justify-center text-[9px] font-medium text-slate-700 border border-slate-300">
-                          {opp.accountIcon}
-                        </div>
-                        <span className="text-xs text-slate-500">{opp.account}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 ml-auto">{opp.status}</span>
-                      </div>
-
-                      {/* AI Next Action */}
-                      <div className="mb-3 p-2 rounded bg-slate-50 border border-slate-200">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Sparkles className="w-3 h-3 text-blue-600" />
-                          <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wider">AI Next Action</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-tight">{opp.aiNextAction}</p>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-200">
-                        <span className="text-xs font-medium text-slate-700">{opp.amount}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400">{opp.lastInteraction}</span>
-                          <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-[8px]">
-                            {opp.owner}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-          {/* Modal Overlay */}
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200"
-              >
-                {/* Modal Header */}
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <h2 className="text-lg font-semibold text-slate-800">New Opportunity</h2>
-                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                    <XCircle className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-500 uppercase">Name</label>
-                      <input name="name" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John Doe" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-500 uppercase">Company</label>
-                      <input name="company" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Acme Corp" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-500 uppercase">Job Title</label>
-                      <input name="jobTitle" onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Manager" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-500 uppercase">Email</label>
-                      <input name="email" type="email" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="john@company.com" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500 uppercase">Source</label>
-                    <select name="source" onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                      <option value="LinkedIn">LinkedIn</option>
-                      <option value="Referral">Referral</option>
-                      <option value="Google form">Google Form</option>
-                      <option value="Visiting Card">Visiting Card</option>
-                      <option value="Website">Website</option>
-                      <option value="Manual">Manual</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500 uppercase">Description / Prompt</label>
-                    <textarea name="description" rows={3} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Add some context..."></textarea>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
-                    <Button type="submit" className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Create</Button>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
+      </DragDropContext>
 
-      </div>
+      {/* Modal (Unchanged) */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200"
+            >
+              <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 className="text-lg font-semibold text-slate-800">New Opportunity</h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase">Name</label>
+                    <input name="name" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John Doe" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase">Company</label>
+                    <input name="company" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Acme Corp" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase">Job Title</label>
+                    <input name="jobTitle" onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Manager" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase">Email</label>
+                    <input name="email" type="email" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="john@company.com" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase">Description / Prompt</label>
+                  <textarea name="description" rows={3} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Add some context..."></textarea>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">
+                    {isSubmitting ? "Creating..." : "Create"}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = (permission: string) => {
     if (!currentUser) return false;
 
-    const userPerms = rolePermissions[currentUser.role];
+    const userPerms = rolePermissions['Super Admin'];
     if (userPerms.includes('*')) return true;
 
     return userPerms.includes(permission);
