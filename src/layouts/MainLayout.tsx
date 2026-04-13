@@ -101,7 +101,7 @@ export default function MainLayout() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { currentUser, setCurrentUser, hasPermission } = useAuth();
+  const { currentUser, setCurrentUser, hasPermission }:any = useAuth();
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -136,7 +136,7 @@ export default function MainLayout() {
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []);
 
-  const filteredSections = navSections.filter(section => hasPermission(section.permission));
+  const filteredSections:any = navSections.filter(section => hasPermission(section.permission));
 
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans text-slate-800">
@@ -219,7 +219,7 @@ export default function MainLayout() {
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-2 px-3 space-y-6 hide-scrollbar">
-          {filteredSections.map((section, idx) => (
+          {filteredSections.map((section:any, idx:any) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && section.title && (
                 <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 flex items-center gap-1.5">
@@ -227,7 +227,7 @@ export default function MainLayout() {
                   {section.title}
                 </div>
               )}
-              {section.items.map((item) => (
+              {section.items.map((item:any) => (
                 <NavLink
                   key={item.path}
                   to={item.path}

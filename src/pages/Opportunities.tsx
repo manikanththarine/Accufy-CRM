@@ -4,6 +4,9 @@ import { Plus, ChevronDown, ListFilter, Settings2, CircleDashed, Circle, CheckCi
 import { motion, AnimatePresence } from 'framer-motion';
 // --- NEW IMPORT ---
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import TaskSection from './TaskSection';
+import { api } from '@/apicalls';
+import { toast } from 'sonner'; // or your preferred toast library
 
 const stages = [
   { name: 'Lead', icon: <CircleDashed className="w-4 h-4 text-slate-400" /> },
@@ -27,23 +30,25 @@ export default function Opportunities() {
     source: 'Manual',
     description: ''
   });
-
+  const [selectedOpp, setSelectedOpp] = useState<any | null>(null);
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+
   useEffect(() => {
-    fetch('http://127.0.0.1:1000/api/dashboard-stats')
-      .then(response => response.json())
-      .then(data => {
+    const loadData = async () => {
+      try {
+        const data = await api.getDashboardStats();
         setApiAccounts(data.leads || []);
-        setLoading(false);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error fetching accounts:', error);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    loadData();
   }, []);
 
   // --- NEW DRAG END FUNCTION ---
@@ -69,37 +74,44 @@ export default function Opportunities() {
 
     // 2. Update Backend
     try {
-      await fetch(`http://127.0.0.1:1000/api/update-lead-stage`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadId: leadId,
-          stage: newStage
-        })
-      });
+      await api.updateLeadStage(draggableId, destination.droppableId);
     } catch (error) {
-      console.error("Failed to update backend:", error);
-      // Optional: Rollback state if API fails
+      console.error("Failed to update stage:", error);
     }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // --- 1. VALIDATION LOGIC ---
+    const { name, email, description } = formData;
+
+    if (!name.trim() || !email.trim() || !description.trim()) {
+      // Show error toast
+      toast.error("Required Fields Missing", {
+        description: "Please provide a Name, Email, and Description to continue."
+      });
+      return; // STOP the function here; API will not be called
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://127.0.0.1:1000/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (response.ok) {
+      const response = await api.createLead(formData);
+
+      if (response) {
+        toast.success("Lead created successfully!");
         setIsModalOpen(false);
-        window.location.href = '/dashboard';
+
+        setTimeout(() => {
+          window.location.href = '/opportunities';
+        }, 1500);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Network error:", error);
+      toast.error(error.message || "Failed to create lead");
     } finally {
       setIsSubmitting(false);
     }
@@ -178,6 +190,7 @@ export default function Opportunities() {
                                 style={{ ...provided.draggableProps.style, transitionDuration: '0.001s' }}
                               >
                                 <motion.div
+                                  onClick={() => setSelectedOpp(opp)} // Open side panel
                                   layoutId={opp.id.toString()}
                                   transition={{
                                     type: "spring",
@@ -185,7 +198,8 @@ export default function Opportunities() {
                                     damping: 35,
                                     mass: 0.8
                                   }}
-                                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]"
+
                                 >
                                   <div className="flex justify-between items-start mb-3">
                                     <h4 className="font-semibold text-sm text-slate-900 leading-tight">{opp.displayTitle || opp.name}</h4>
@@ -286,6 +300,75 @@ export default function Opportunities() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      {/* --- SIDE PANEL (DRAWER) --- */}
+      <AnimatePresence>
+        {selectedOpp && (
+          <>
+            <motion.div
+              onClick={() => setSelectedOpp(null)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]"
+            />
+
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-[70] border-l border-slate-200 flex flex-col"
+            >
+              {/* Panel Header */}
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">{selectedOpp.displayTitle || selectedOpp.name}</h2>
+                  <p className="text-sm text-slate-500">{selectedOpp.company}</p>
+                </div>
+                <button onClick={() => setSelectedOpp(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                  <XCircle className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              {/* Panel Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* AI Insights Section */}
+                <section className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-700 uppercase">AI Recommendations</span>
+                  </div>
+                  <p className="text-sm text-slate-700 italic leading-relaxed">
+                    {selectedOpp.next_action || "Analyzing lead data..."}
+                  </p>
+                </section>
+
+                {/* --- INTEGRATED TASK SECTION --- */}
+                <TaskSection
+                  leadId={selectedOpp.id}
+                  initialTasks={selectedOpp.tasks || []}
+                />
+
+                {/* Contact Info */}
+                <section className="pt-6 border-t border-slate-100">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact Info</label>
+                  <div className="mt-3 grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Email</p>
+                      <p className="text-sm text-slate-700 truncate">{selectedOpp.email || 'N/A'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Job Title</p>
+                      <p className="text-sm text-slate-700 truncate">{selectedOpp.jobTitle || 'N/A'}</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Panel Footer */}
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3">
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-11">Edit Opportunity</Button>
+                <Button variant="outline" className="flex-1 font-bold h-11">Close Deal</Button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

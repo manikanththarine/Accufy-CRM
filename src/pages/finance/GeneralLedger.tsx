@@ -34,7 +34,7 @@ const glTransactions = [
     auditThread: [
       { step: 'Expense Submitted', user: 'Sarah Connor', time: 'Nov 18, 2023 11:20', docId: 'EXP-102' },
       { step: 'AI Flag: High Cost', user: 'AI Auditor', time: 'Nov 18, 2023 11:21', docId: 'FLAG-092' },
-      { step: 'Manual Override', user: 'Avinash Nadh', time: 'Nov 25, 2023 15:40', docId: 'APPR-441' },
+      { step: 'Manual Override', user: 'Manikanth', time: 'Nov 25, 2023 15:40', docId: 'APPR-441' },
       { step: 'GL Post Pending', user: 'System', time: 'Nov 25, 2023 15:45', docId: 'GL-99202' }
     ]
   },

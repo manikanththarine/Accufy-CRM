@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 // Mock Data for Adjacency List Model
 const initialOrgUnits = [
-  { id: '1', parentId: null, name: 'Acme Corp Global', type: 'Org', head: 'Avinash Nadh', children: ['2', '3'] },
+  { id: '1', parentId: null, name: 'Acme Corp Global', type: 'Org', head: 'Manikanth', children: ['2', '3'] },
   { id: '2', parentId: '1', name: 'Acme Corp NA', type: 'Company', head: 'Sarah Connor', children: ['4', '5'] },
   { id: '3', parentId: '1', name: 'Acme Corp EMEA', type: 'Company', head: 'Michael Chang', children: ['6'] },
   { id: '4', parentId: '2', name: 'Engineering', type: 'BU', head: 'David Kim', children: ['7', '8'] },

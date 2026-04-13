@@ -70,7 +70,7 @@ const Toggle = ({ label, description, defaultChecked = false, ai = false }: { la
 export default function Settings() {
   const [activeTab, setActiveTab] = React.useState('profile');
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser }:any= useAuth();
 
   const handleNavClick = (item: any) => {
     if (item.isLink) {

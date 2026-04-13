@@ -6,7 +6,7 @@ const meetings = [
   {
     date: 'Fri, Dec 12',
     items: [
-      { id: 1, time: '11:00 - 11:15 PM', title: 'Avinash Nadh Basuvu - Interview with Product Owner - 15mins', account: 'Kollx', accountIcon: 'K' }
+      { id: 1, time: '11:00 - 11:15 PM', title: 'Manikanth Basuvu - Interview with Product Owner - 15mins', account: 'Kollx', accountIcon: 'K' }
     ]
   },
   {

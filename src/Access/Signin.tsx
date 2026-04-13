@@ -4,6 +4,7 @@ import { LogIn, Mail, Lock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-re
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { USERS } from "../contexts/AuthContext";
+import { api } from '@/apicalls';
 
 export default function Signin() {
     const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ export default function Signin() {
             setIsAuthenticated(true);
         }
     }, []);
+
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -28,21 +30,15 @@ export default function Signin() {
 
         try {
             // 1. Call your actual backend API
-            const response = await fetch('http://localhost:1000/api/users/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
+            const response = await api.Signin(email, password);
 
             const data = await response.json();
-console.log(data)
+            console.log(data)
             // 2. Check if the server returned an error (e.g., 401 Unauthorized)
             if (!response.ok) {
                 throw new Error(data.message || 'Invalid email or password');
             }
-            
+
 
             /* 3. AUTHENTICATION SUCCESS
                Assuming your backend returns: 

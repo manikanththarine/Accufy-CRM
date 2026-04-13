@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Added useState & useEffect
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
-import { Plus, ChevronDown, ListFilter, Settings2, Sparkles } from 'lucide-react';
-
-const contacts = [
-  { id: 1, name: 'Pavani Kallakuri', account: 'Phenom', accountIcon: 'P', lastInteraction: '4d ago', jobTitle: 'Senior Talent Acquisition Exec', email: 'pavani.kallakuri@phenom.com', linkedin: 'pavani-kallakuri-1234', leadScore: 75, status: 'Warm', aiNextAction: 'Follow up on recent email' },
-  { id: 2, name: 'Deekshitha S', account: 'Phenom', accountIcon: 'P', lastInteraction: '4d ago', jobTitle: 'Talent Acquisition Executive', email: 'deekshitha.s@phenom.com', linkedin: 'deekshitha-s-ba7a3b236', leadScore: 45, status: 'Cold', aiNextAction: 'Nurture with marketing content' },
-  { id: 3, name: 'Sravani G', account: 'Phenom', accountIcon: 'P', lastInteraction: '4d ago', jobTitle: 'Talent Acquisition Executive', email: 'sravani.g@phenom.com', linkedin: 'sravani-g-1234', leadScore: 60, status: 'Warm', aiNextAction: 'Invite to upcoming webinar' },
-  { id: 4, name: 'John Doe', account: 'HCA Healthcare', accountIcon: 'H', lastInteraction: '6d ago', jobTitle: 'VP of HR', email: 'john.doe@hca.com', linkedin: 'johndoe', leadScore: 95, status: 'Hot', aiNextAction: 'Schedule executive briefing' },
-  { id: 5, name: 'Jane Smith', account: 'Kollx', accountIcon: 'K', lastInteraction: '6d ago', jobTitle: 'CEO', email: 'jane@kollx.com', linkedin: 'janesmith', leadScore: 88, status: 'Hot', aiNextAction: 'Send ROI case study' },
-];
-
+import { Plus, ChevronDown, ListFilter, Settings2, Sparkles, Loader2 } from 'lucide-react';
+import {api} from "../apicalls"; // Importing API functions
 export default function Contacts() {
+  // 1. Initialize state for contacts and loading status
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  // 2. Fetch data from your API
+   useEffect(() => {
+      const loadData = async () => {
+        try {
+          const data = await api.getDashboardStats();
+          setContacts(data.leads || []);
+        } catch (error) {
+          console.error('Error fetching accounts:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadData();
+    }, []);
+console.log(contacts)
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -19,7 +30,7 @@ export default function Contacts() {
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold text-slate-900">Contacts</h1>
           <div className="flex items-center gap-1 bg-slate-100 rounded-md p-0.5">
-            <button className="px-3 py-1 text-sm font-medium bg-slate-100 text-slate-900 rounded shadow-sm">
+            <button className="px-3 py-1 text-sm font-medium bg-white text-slate-900 rounded shadow-sm">
               All
             </button>
             <button className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded">
@@ -53,47 +64,62 @@ export default function Contacts() {
         </Button>
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto border border-slate-200 rounded-md bg-white">
-        <Table>
-          <TableHeader className="bg-slate-50 sticky top-0 z-10">
-            <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Name</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Account</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Score</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Status</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Job title</TableHead>
-              <TableHead className="text-xs font-medium text-slate-400 h-9">Email addresses</TableHead>
-              <TableHead className="text-xs font-medium text-blue-600 h-9 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> AI Next Action
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contacts.map((contact) => (
-              <TableRow key={contact.id} className="border-slate-200 hover:bg-slate-100 cursor-pointer">
-                <TableCell className="py-2 font-medium text-sm text-slate-800">{contact.name}</TableCell>
-                <TableCell className="py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-700 border border-slate-300">
-                      {contact.accountIcon}
-                    </div>
-                    <span className="text-sm text-slate-700">{contact.account}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-2">
-                  <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${contact.leadScore >= 80 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : contact.leadScore >= 60 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                    {contact.leadScore}
-                  </div>
-                </TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{contact.status}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{contact.jobTitle}</TableCell>
-                <TableCell className="py-2 text-sm text-slate-500">{contact.email}</TableCell>
-                <TableCell className="py-2 text-xs text-blue-600/80 italic">{contact.aiNextAction}</TableCell>
+      {/* Table Section */}
+      <div className="flex-1 overflow-auto border border-slate-200 rounded-md bg-white relative">
+        {loading ? (
+          // Loading State
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-slate-50 sticky top-0 z-10">
+              <TableRow className="border-slate-200 hover:bg-transparent">
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Name</TableHead>
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Account</TableHead>
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Score</TableHead>
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Status</TableHead>
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Job title</TableHead>
+                <TableHead className="text-xs font-medium text-slate-400 h-9">Email addresses</TableHead>
+                <TableHead className="text-xs font-medium text-blue-600 h-9 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> AI Next Action
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {contacts.length > 0 ? (
+                contacts.map((contact:any) => (
+                  <TableRow key={contact.id} className="border-slate-200 hover:bg-slate-100 cursor-pointer">
+                    <TableCell className="py-2 font-medium text-sm text-slate-800">{contact.name}</TableCell>
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-700 border border-slate-300">
+                          {contact.company?.[0] }
+                        </div>
+                        <span className="text-sm text-slate-700">{contact.company}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${contact.score >= 80 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : contact.score >= 60 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                        {contact.score}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2 text-sm text-slate-500">{contact.status}</TableCell>
+                    <TableCell className="py-2 text-sm text-slate-500">{contact.job_title}</TableCell>
+                    <TableCell className="py-2 text-sm text-slate-500">{contact.email}</TableCell>
+                    <TableCell className="py-2 text-xs text-blue-600/80 italic">{contact.ai_next_action}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10 text-slate-500">
+                    No contacts found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
       
       {/* Footer */}

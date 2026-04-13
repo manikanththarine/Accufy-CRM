@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const employees = [
-  { id: 1, name: 'Avinash Nadh', role: 'CEO', department: 'Executive', orgNode: 'Acme Corp Global', status: 'Active', lifecycle: 'Tenured', joined: 'Jan 2020', salary: '$150,000', aiInsight: 'High performer, due for review' },
+  { id: 1, name: 'Manikanth', role: 'CEO', department: 'Executive', orgNode: 'Acme Corp Global', status: 'Active', lifecycle: 'Tenured', joined: 'Jan 2020', salary: '$150,000', aiInsight: 'High performer, due for review' },
   { id: 2, name: 'Sarah Connor', role: 'VP Sales', department: 'Sales', orgNode: 'Sales, Acme Corp NA', status: 'Active', lifecycle: 'Tenured', joined: 'Mar 2021', salary: '$120,000', aiInsight: 'Exceeded Q3 targets' },
   { id: 3, name: 'John Smith', role: 'Lead Developer', department: 'Engineering', orgNode: 'Frontend Team', status: 'On Leave', lifecycle: 'Tenured', joined: 'Jun 2022', salary: '$110,000', aiInsight: 'Returning next week' },
   { id: 4, name: 'Emily Chen', role: 'HR Manager', department: 'HR', orgNode: 'Acme Corp EMEA', status: 'Active', lifecycle: 'Probation', joined: 'Sep 2023', salary: '$90,000', aiInsight: 'Managing 3 open requisitions' },
@@ -26,7 +26,7 @@ const exitInterviews = [
 
 export default function Employees() {
   const [activeTab, setActiveTab] = useState('directory');
-  const { currentUser, hasPermission } = useAuth();
+  const { currentUser, hasPermission }:any = useAuth();
   
   const isSelfServiceOnly = !hasPermission('view:hrm') && hasPermission('view:self_service');
 

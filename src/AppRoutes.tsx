@@ -26,6 +26,7 @@ import Meetings from "./pages/Meetings";
 import Notes from "./pages/Notes";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "./ProtectedRoute"
+import AICopilot from "./pages/AICopilot";
 export default function AppRoutes() {
     const { isAuthenticated, isInitializing } = useAuth();
     console.log(isAuthenticated)
@@ -79,6 +80,7 @@ export default function AppRoutes() {
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="meetings" element={<Meetings />} />
                     <Route path="notes" element={<Notes />} />
+                    <Route path="aicopilot" element={<AICopilot />} />
 
                     <Route path="chats/new" element={<GenericPage title="AI Copilot" />} />
                     <Route path="settings" element={<Settings />} />

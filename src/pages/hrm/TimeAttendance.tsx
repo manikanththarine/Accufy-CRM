@@ -15,7 +15,7 @@ const attendanceRecords = [
 
 const leaveRequests = [
   { id: 'LR-101', employee: 'David Kim', type: 'Sick Leave', dates: 'Dec 01 - Dec 02', days: 2, status: 'Pending', approver: 'Michael Chang (Backend Team Lead)', aiInsight: 'High probability of approval based on balance and team capacity.' },
-  { id: 'LR-102', employee: 'Sarah Connor', type: 'Vacation', dates: 'Dec 15 - Dec 29', days: 10, status: 'Approved', approver: 'Avinash Nadh (CEO)', aiInsight: 'Coverage plan verified. No critical project overlap.' },
+  { id: 'LR-102', employee: 'Sarah Connor', type: 'Vacation', dates: 'Dec 15 - Dec 29', days: 10, status: 'Approved', approver: 'Manikanth (CEO)', aiInsight: 'Coverage plan verified. No critical project overlap.' },
   { id: 'LR-103', employee: 'John Smith', type: 'Personal', dates: 'Dec 05', days: 1, status: 'Pending', approver: 'Sarah Connor (VP Sales)', aiInsight: 'Warning: 3 other team members off on this date.' },
 ];
 

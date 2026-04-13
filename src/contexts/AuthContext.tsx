@@ -17,7 +17,7 @@ export interface User {
 
 /* ---------------- USERS ---------------- */
 export const USERS: User[] = [
-  { id: '1', name: 'Avinash Nadh', email: 'avinash@example.com', role: 'Super Admin', initials: 'AN' },
+  { id: '1', name: 'Manikanth', email: 'avinash@example.com', role: 'Super Admin', initials: 'AN' },
   { id: '2', name: 'Emily Chen', email: 'emily@example.com', role: 'HR Manager', initials: 'EC' },
   { id: '3', name: 'Michael Chang', email: 'michael@example.com', role: 'Finance Controller', initials: 'MC' },
   { id: '4', name: 'Sarah Connor', email: 'sarah@example.com', role: 'Inventory Manager', initials: 'SC' },
