@@ -221,7 +221,7 @@ console.log("Stage update result:", result);
                                       <Sparkles className="w-3 h-3 text-blue-600" />
                                       <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">AI Next Action</span>
                                     </div>
-                                    <p className="text-xs text-slate-600 line-clamp-2 italic">"{opp.ai_next_action || opp.next_action}"</p>
+                                    <p className="text-xs text-slate-600 line-clamp-2 italic">"{opp.ai_next_action || opp.next_action_type}"</p>
                                   </div>
 
                                   <div className="flex items-center justify-between pt-3 border-t border-slate-50">

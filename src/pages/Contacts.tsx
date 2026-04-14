@@ -107,7 +107,7 @@ console.log(contacts)
                     <TableCell className="py-2 text-sm text-slate-500">{contact.status}</TableCell>
                     <TableCell className="py-2 text-sm text-slate-500">{contact.job_title}</TableCell>
                     <TableCell className="py-2 text-sm text-slate-500">{contact.email}</TableCell>
-                    <TableCell className="py-2 text-xs text-blue-600/80 italic">{contact.ai_next_action}</TableCell>
+                    <TableCell className="py-2 text-xs text-blue-600/80 italic">{contact.next_action_type}</TableCell>
                   </TableRow>
                 ))
               ) : (
