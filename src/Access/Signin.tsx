@@ -23,58 +23,57 @@ export default function Signin() {
         }
     }, []);
 
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
+   const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false); // Reset success state on new attempt
 
-        try {
-            // 1. Call your actual backend API
-            const response = await api.Signin(email, password);
+    try {
+        const response = await fetch(`http://127.0.0.1:1000/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-            const data = await response.json();
-            console.log(data)
-            // 2. Check if the server returned an error (e.g., 401 Unauthorized)
-            if (!response.ok) {
-                throw new Error(data.message || 'Invalid email or password');
-            }
+        // 1. Parse data once
+        const data = await response.json();
 
-
-            /* 3. AUTHENTICATION SUCCESS
-               Assuming your backend returns: 
-               { 
-                 token: "eyJ...", 
-                 user: { id: "1", name: "Manikanth", email: "...", role: "Super Admin" } 
-               }
-            */
-
-            const { token, user } = data;
-
-            // A. Store the JWT Token for future API calls
-            localStorage.setItem('token', token);
-
-            // B. Store user info so it persists on page refresh
-            localStorage.setItem('user', JSON.stringify(user));
-
-            // C. Update Global Context State (the hooks from your useAuth)
-            setCurrentUser(user);
-            setIsAuthenticated(true);
-
-            // 4. Trigger UI Success State
-            setSuccess(true);
-
-            // 5. Redirect after a short delay to show the success animation
-            setTimeout(() => {
-                navigate("/up-next");
-            }, 1500);
-
-        } catch (err: any) {
-            // Catch network errors or the errors we threw above
-            setError(err.message || 'An error occurred. Please try again later.');
-        } finally {
-            setIsLoading(false);
+        // 2. Check for response errors early
+        if (!response.ok) {
+            // Use specific error messages from backend or default to a generic one
+            throw new Error(data.message || 'Invalid email or password');
         }
-    };
+
+        /* 3. AUTHENTICATION SUCCESS */
+        const { token, user } = data;
+
+        // A. Persistence: Store the JWT and User data
+        // Consider using HttpOnly cookies in production for better security
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        // B. State Update: Sync your Auth Context
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+
+        // 4. UI Success Feedback
+        setSuccess(true);
+
+        // 5. Redirect with cleanup
+        const timer = setTimeout(() => {
+            navigate("/up-next");
+        }, 1500);
+
+        return () => clearTimeout(timer);
+
+    } catch (err: any) {
+        // Handle network errors (Fetch failing) or thrown errors
+        setError(err.message || 'An error occurred. Please try again later.');
+    } finally {
+        setIsLoading(false);
+    }
+};
     return (
         <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4 font-sans">
             <motion.div

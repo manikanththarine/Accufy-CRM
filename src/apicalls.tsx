@@ -28,11 +28,11 @@ export const api = {
             body: JSON.stringify(data),
         }).then(handleResponse),
 
-    updateLeadStage: (leadId: string, stage: string) =>
+    updateLeadStage: (lead_id: string, stage: string) =>
         fetch(`${BASE_URL}/api/update-lead-stage`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ leadId, stage }),
+            body: JSON.stringify({ lead_id, stage }),
         }).then(handleResponse),
 
     // Tasks

@@ -74,7 +74,8 @@ export default function Opportunities() {
 
     // 2. Update Backend
     try {
-      await api.updateLeadStage(draggableId, destination.droppableId);
+     const result = await api.updateLeadStage(draggableId, destination.droppableId);
+console.log("Stage update result:", result);
     } catch (error) {
       console.error("Failed to update stage:", error);
     }
